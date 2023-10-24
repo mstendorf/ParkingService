@@ -1,0 +1,58 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: notification-service
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: notificationservice
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: STARTUPDLL
+              value: "api/NotificationService.dll"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+spec:
+  type: LoadBalancer
+  ports:
+    - name: notification-service
+      port: 8080
+      targetPort: 80
+  selector:
+    app: notification-service
+---
+# event consumer starts here
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: notification-poller
+spec:
+  schedule: "*/1 * * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: notification-poller
+              image: notificationservice
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: STARTUPDLL
+                  value: "consumer/NotificationPoller.dll"
+          restartPolicy: Never
+  concurrencyPolicy: Forbid

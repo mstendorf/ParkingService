@@ -1,0 +1,39 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: parking-service
+spec:
+  replicas: 1 
+  selector:
+    matchLabels:
+      app: parking-service
+  template:
+    metadata:
+      labels:
+        app: parking-service
+    spec:
+      containers:
+        - name: parking-service
+          image: parking-service
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+          env:
+            - name: STARTUPDLL
+              value: "api/ParkingService.dll"
+            - name: MotorApiKey
+              value: "your-token-here"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: parking-service
+spec:
+  type: LoadBalancer
+  ports:
+    - name: parking-service
+      port: 80
+      targetPort: 80
+  selector:
+    app: parking-service
